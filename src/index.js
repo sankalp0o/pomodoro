@@ -4,6 +4,9 @@ import './index.css';
 import registerServiceWorker from './registerServiceWorker';
 import logo from './logo.png';
 import axios from 'axios';
+import Timer from 'easytimer.js';
+import $ from 'jquery'; 
+
 
 class App extends Component {
   render() {
@@ -16,97 +19,60 @@ class App extends Component {
         <p className="App-intro">
           To get started, press <code>START</code>.
         </p>
-        <Timer></Timer>
+        <CountDown></CountDown>
       </div>
     );
   }
 }
 
-class Timer extends Component {
-  constructor(props){
-    super(props)
-    this.state = {
-      time: 0,
-      isOn: false,
-      start: 0,
-    }
-    this.startTimer = this.startTimer.bind(this)
-    this.stopTimer = this.stopTimer.bind(this)
-    this.resetTimer = this.resetTimer.bind(this)
-    this.getTimeRemaining = this.getTimeRemaining.bind(this)
-    this.postToAirtable = this.postToAirtable.bind(this)
-  }
+class CountDown extends Component {
 
-  startTimer() {
-    this.setState({
-      isOn: true,
-      time: this.state.time,
-      start: Date.now() - this.state.time
-    })
-    this.timer = setInterval(() => {
-    	this.setState({time: Date.now() - this.state.start});
-      if (25*60*1000 - this.state.time<200) {
-        this.stopTimer();
-        const recordId = this.postToAirtable();
-        console.log(recordId);
-      };
-    }, 1);
-  }
-
-  postToAirtable() {
-    axios({
-          method:'get',
-          url:'https://api.airtable.com/v0/appGOvx0K6n52RPYO/August?maxRecords=3&view=Grid%20view&sort%5B0%5D%5Bfield%5D=Name&sort%5B0%5D%5Bdirection%5D=desc',
-          headers:{'Authorization': 'Bearer keyYZBRuaSbhVQi5P'},
-        })
-        .then(function (response) {
-          //console.log(response.data.records[0].id);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-  }
-
-  stopTimer() {
-    this.setState({isOn: false})
-    clearInterval(this.timer)
-  }
-
-  resetTimer() {
-    this.setState({time: 0, isOn: false})
-  }
-
-  getTimeRemaining(timeInMilliSecs) {
-    // return a string value of the time remaining
-    const total = timeInMilliSecs,
-      minutes = Math.floor(total / 1000 / 60 % 60),
-      seconds = Math.floor(total / 1000 % 60) < 10
-        ? '0' + Math.floor(total / 1000 % 60)
-        : Math.floor(total / 1000 % 60);
-    const timeString = minutes +":" + seconds;
-    return timeString;
+  componentDidMount() {
+    var timer = new Timer();
+      $('#chronoExample .startButton').click(function () {
+          timer.start({countdown: true, startValues: {seconds: 5}});
+          $('#chronoExample .values h1').html(timer.getTimeValues().toString());
+          timer.addEventListener('secondsUpdated', function (e) {
+              $('#chronoExample .values h1').html(timer.getTimeValues().toString());
+          });
+          timer.addEventListener('targetAchieved', function (e) {
+              $('#chronoExample .values h1').html('Pomodoro Finished! Start another one.');
+          });
+      });
+      $('#chronoExample .pauseButton').click(function () {
+          timer.pause();
+      });
+      $('#chronoExample .stopButton').click(function () {
+          timer.stop();
+      });
+      $('#chronoExample .resetButton').click(function () {
+          timer.reset();
+      });
+      timer.addEventListener('secondsUpdated', function (e) {
+          $('#chronoExample .values h1').html(timer.getTimeValues().toString());
+      });
+      timer.addEventListener('started', function (e) {
+          $('#chronoExample .values h1').html(timer.getTimeValues().toString());
+      });
+      timer.addEventListener('reset', function (e) {
+          $('#chronoExample .values h1').html(timer.getTimeValues().toString());
+    });
   }
 
   render() {
-    let start = (this.state.time == 0) ?
-      <button onClick={this.startTimer}>start</button> :
-      null
-    let stop = (this.state.time == 0 || !this.state.isOn) ?
-      null :
-      <button onClick={this.stopTimer}>stop</button>
-    let resume = (this.state.time == 0 || this.state.isOn) ?
-      null :
-      <button onClick={this.startTimer}>resume</button>
-    let reset = (this.state.time == 0 || this.state.isOn) ?
-      null :
-      <button onClick={this.resetTimer}>reset</button>
     return(
-      <div>
-        <h1>{this.getTimeRemaining(25*60*1000 - this.state.time)}</h1>
-        {start}
-        {resume}
-        {stop}
-        {reset}
+      <div id="chronoExample">
+        <div class="values">
+          <h1>
+            00:00:00
+          </h1>
+        </div>
+        <div>
+            <button class="startButton">Start</button>
+            <button class="pauseButton" >Pause</button>
+            <button class="stopButton">Stop</button>
+            <button class="resetButton">Reset</button>
+        </div>
       </div>
     )
   }
